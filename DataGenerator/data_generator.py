@@ -28,38 +28,45 @@ def nick_binarize(img_list):
     results = []
 
     for img in img_list:
-        # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        try:
+            # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        height = img.shape[0]
-        width = img.shape[1]
+            height = img.shape[0]
+            width = img.shape[1]
 
-        # Resize the images to 200 pixel height
-        scaling_factor = 100/img.shape[0]
-        new_w = int(scaling_factor*img.shape[1])
-        new_h = int(scaling_factor*img.shape[0])
-        # img = cv2.resize(img, (new_w, new_h))
-        img = np.array(Image.fromarray(img).resize((new_w, new_h), Image.ANTIALIAS))
+            # Resize the images to 200 pixel height
+            scaling_factor = 100/img.shape[0]
+            new_w = int(scaling_factor*img.shape[1])
+            new_h = int(scaling_factor*img.shape[0])
+            # img = cv2.resize(img, (new_w, new_h))
+            img = np.array(Image.fromarray(img).resize((new_w, new_h), Image.ANTIALIAS))
 
-        # First pass thresholding
-        th1 = threshold_niblack(img, 13, 0.00)
+            # First pass thresholding
+            th1 = threshold_niblack(img, 13, 0.00)
 
-        # Second pass thresholding
-        radius = 101
-        structured_elem = disk(radius)
-        th2 =  rank.otsu(img, structured_elem)
+            # Second pass thresholding
+            radius = 101
+            structured_elem = disk(radius)
+            th2 =  rank.otsu(img, structured_elem)
 
-        # Masking
-        img = (img > th1) | (img > th2)
-        img = img.astype('uint8')*255
+            # Masking
+            img = (img > th1) | (img > th2)
+            img = img.astype('uint8')*255
 
-        img = np.array(Image.fromarray(img).resize((width, height), Image.ANTIALIAS))
-        results.append(img)
+            img = np.array(Image.fromarray(img).resize((width, height), Image.ANTIALIAS))
+            results.append(img)
+        except Exception as e:
+            continue
 
     return results
 
 class FakeTextDataGenerator(object):
     @classmethod
-    def generate(cls, index, text, font, out_dir, height, extension, skewing_angle, random_skew, blur, random_blur, background_type, distorsion_type, distorsion_orientation, is_handwritten, name_format, text_color=-1, prefix = ""):
+    def generate(cls, index, text, font, out_dir, height, extension,
+                    skewing_angle, random_skew, blur, random_blur,
+                    background_type, distorsion_type,
+                    distorsion_orientation, is_handwritten,
+                    name_format, text_color=-1, prefix = ""):
             image = None
 
             ##########################
@@ -77,10 +84,13 @@ class FakeTextDataGenerator(object):
             rotated_img = image.rotate(skewing_angle if not random_skew else random_angle, expand=1)
 
             if (random.randint(0,10) < 3):
-                x = random.randint(1,4)
-                kernel = np.ones((x, x), np.uint8)
+                try:
+                    x = random.randint(1,4)
+                    kernel = np.ones((x, x), np.uint8)
 
-                rotated_img = Image.fromarray(cv2.erode(np.array(rotated_img), kernel, iterations=1))
+                    rotated_img = Image.fromarray(cv2.erode(np.array(rotated_img), kernel, iterations=1))
+                except Exception as e:
+                    pass
             else:
                 if (random.randint(0,10) < 1 and height > 45):
                     x = random.randint(1, 4)
@@ -114,26 +124,36 @@ class FakeTextDataGenerator(object):
             distorsion_type = random.choice([0,1,2])
             if distorsion_type == 0:
                 distorted_img = rotated_img # Mind = blown
+
             elif distorsion_type == 1:
-                distorted_img = DistorsionGenerator.sin(
-                    rotated_img,
-                    vertical=(distorsion_orientation == 0 or distorsion_orientation == 2),
-                    horizontal=(distorsion_orientation == 1 or distorsion_orientation == 2),
-                    max_offset = 2
-                )
+                try:
+                    distorted_img = DistorsionGenerator.sin(
+                        rotated_img,
+                        vertical=(distorsion_orientation == 0 or distorsion_orientation == 2),
+                        horizontal=(distorsion_orientation == 1 or distorsion_orientation == 2),
+                        max_offset = 2
+                    )
+                except Exception as e:
+                    pass
             elif distorsion_type == 2:
-                distorted_img = DistorsionGenerator.cos(
-                    rotated_img,
-                    vertical=(distorsion_orientation == 0 or distorsion_orientation == 2),
-                    horizontal=(distorsion_orientation == 1 or distorsion_orientation == 2),
-                    max_offset = 2
-                )
+                try:
+                    distorted_img = DistorsionGenerator.cos(
+                        rotated_img,
+                        vertical=(distorsion_orientation == 0 or distorsion_orientation == 2),
+                        horizontal=(distorsion_orientation == 1 or distorsion_orientation == 2),
+                        max_offset = 2
+                    )
+                except Exception as e:
+                    pass
             else:
-                distorted_img = DistorsionGenerator.random(
-                    rotated_img,
-                    vertical=(distorsion_orientation == 0 or distorsion_orientation == 2),
-                    horizontal=(distorsion_orientation == 1 or distorsion_orientation == 2)
-                )
+                try:
+                    distorted_img = DistorsionGenerator.random(
+                        rotated_img,
+                        vertical=(distorsion_orientation == 0 or distorsion_orientation == 2),
+                        horizontal=(distorsion_orientation == 1 or distorsion_orientation == 2)
+                    )
+                except Exception as e:
+                    distorted_img = rotated_img
 
             new_text_width, new_text_height = distorted_img.size
 
@@ -219,7 +239,16 @@ class FakeTextDataGenerator(object):
             else:
                 print('{} is not a valid name format. Using default.'.format(name_format))
                 image_name = '{}_{}.{}'.format(text, str(index), extension)
+            print("---------------{}---------------------------".format(index))
+            print("saver: ", os.path.join(out_dir, image_name))
+            print("image name: ", image_name)
+            print("--------------------------------------------")
 
-
-            # Save the image
-            final_image.convert('RGB').save(os.path.join(out_dir, image_name))
+            saver = os.path.join(out_dir, image_name)
+            componet_path = saver.split('/')
+            if len(componet_path)  == 2 and len(componet_path[0]) != 0:
+                final_image.convert('RGB').save(saver)
+            else:
+                with open('logs/log_imagePath.txt', 'a') as f:
+                    f.write(str(saver))
+                    f.write('\n')
