@@ -27,23 +27,24 @@ def processing(dataset, new_h=10):
 	all_datasets = os.listdir(dataset)
 	print(all_datasets)
 	for data in all_datasets:
-		images_path = dataset + '/' + data + '/' + 'images'
-		for image in tqdm.tqdm(os.listdir(images_path)):
-			try:
-				path_image = os.path.join(images_path, image)
-				name = image.split('_')[-1]
-				img = cv2.imread(path_image)
-				h, w = img.shape[0], img.shape[1]
-				# print(img.shape)
-				new_w = int((new_h*w)/h)
-				new_shape = (new_w, new_h)
-				# print(new_shape)
-				new_img = cv2.resize(img, new_shape, interpolation = cv2.INTER_AREA)
-				saver_path = dataset + '/' + data + '/' + 'processed'
-				check_exists(saver_path)
-				result = cv2.imwrite(saver_path + '/' + name, new_img)
-			except Exception as e:
-				logging.error("Exception preprocessing image ", exc_info=True)
+		if data == '540k':
+			images_path = dataset + '/' + data + '/' + 'images'
+			for image in tqdm.tqdm(os.listdir(images_path)):
+				try:
+					path_image = os.path.join(images_path, image)
+					name = image.split('_')[-1]
+					img = cv2.imread(path_image)
+					h, w = img.shape[0], img.shape[1]
+					# print(img.shape)
+					new_w = int((new_h*w)/h)
+					new_shape = (new_w, new_h)
+					# print(new_shape)
+					new_img = cv2.resize(img, new_shape, interpolation = cv2.INTER_AREA)
+					saver_path = dataset + '/' + data + '/' + 'processed'
+					check_exists(saver_path)
+					result = cv2.imwrite(saver_path + '/' + name, new_img)
+				except Exception as e:
+					logging.error("Exception preprocessing image ", exc_info=True)
 
 
 if __name__ == '__main__':
@@ -56,7 +57,7 @@ if __name__ == '__main__':
 		type=str,
 		nargs="?",
 		help="The input directory",
-		default="./data_gen",
+		default="./datasets",
 	)
 	args = parser.parse_args()
 	check_exists('logs')
